@@ -222,6 +222,102 @@
       </button>
     </ToggableSection>
 
+    <ToggableSection title="Telegram" id="trades-telegram" inset>
+      <div class="column mb16">
+        <div class="form-group text-nowrap">
+          <label class="checkbox-control">
+            <input
+              type="checkbox"
+              class="form-control"
+              :checked="telegramEnabled"
+              @change="$store.commit(paneId + '/TOGGLE_TELEGRAM')"
+            />
+            <div></div>
+            <span>Enable Telegram notifications</span>
+          </label>
+        </div>
+        <div v-if="telegramEnabled" class="-fill ml16">
+          <div class="form-group">
+            <label class="d-block text-color-base">Bot Token</label>
+            <input
+              type="password"
+              class="form-control"
+              placeholder="123456:ABC-DEF..."
+              :value="telegramBotToken"
+              @input="
+                $store.commit(
+                  paneId + '/SET_TELEGRAM_BOT_TOKEN',
+                  $event.target.value
+                )
+              "
+            />
+          </div>
+          <div class="form-group">
+            <label class="d-block text-color-base">Chat ID</label>
+            <input
+              type="text"
+              class="form-control"
+              placeholder="123456789"
+              :value="telegramChatId"
+              @input="
+                $store.commit(
+                  paneId + '/SET_TELEGRAM_CHAT_ID',
+                  $event.target.value
+                )
+              "
+            />
+          </div>
+          <div class="form-group">
+            <label class="d-block text-color-base">
+              Minimum amount for notification
+              <i
+                class="icon-info mr8"
+                v-tippy
+                title="Send notification when trade value exceeds this amount"
+              ></i>
+            </label>
+            <input
+              type="number"
+              class="form-control"
+              min="0"
+              step="1000"
+              :value="telegramThreshold"
+              @input="
+                $store.commit(
+                  paneId + '/SET_TELEGRAM_THRESHOLD',
+                  $event.target.value
+                )
+              "
+            />
+          </div>
+          <div class="form-group mt16">
+            <button
+              type="button"
+              class="btn -small"
+              :disabled="telegramTestLoading"
+              @click="sendTestNotification"
+            >
+              <span v-if="telegramTestLoading">Sending...</span>
+              <span v-else>Send Test Message</span>
+            </button>
+            <span
+              v-if="telegramTestResult"
+              class="ml8"
+              :class="
+                telegramTestResult.success ? 'text-success' : 'text-error'
+              "
+            >
+              {{
+                telegramTestResult.success
+                  ? '✓ Message sent!'
+                  : '✗ ' + telegramTestResult.error
+              }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </ToggableSection>
+
     <ToggableSection title="Preferences" id="trades-preferences" inset>
       <div
         class="form-group column mb8"
@@ -407,6 +503,7 @@ import ColorPickerControl from '@/components/framework/picker/ColorPickerControl
 import ThresholdColor from '@/components/trades/ThresholdColor.vue'
 import MarketMultiplier from '@/components/trades/MarketMultiplier.vue'
 import ToggableGroup from '@/components/framework/ToggableGroup.vue'
+import telegramService from '@/services/telegramService'
 
 @Component({
   components: {
@@ -431,6 +528,25 @@ export default class TradesSettings extends Vue {
   secondsAgoExample = '0s ago'
 
   private _secondsAgoExampleTimeout: number
+  telegramTestLoading = false
+  telegramTestResult: { success: boolean; error?: string } | null = null
+
+  async sendTestNotification() {
+    this.telegramTestLoading = true
+    this.telegramTestResult = null
+
+    try {
+      const result = await telegramService.sendTestMessage(this.paneId)
+      this.telegramTestResult = result
+    } catch (error) {
+      this.telegramTestResult = {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    } finally {
+      this.telegramTestLoading = false
+    }
+  }
 
   get HHMM() {
     return new Date()
@@ -517,6 +633,22 @@ export default class TradesSettings extends Vue {
       return this.$store.state.settings.audioVolume
     }
     return volume
+  }
+
+  get telegramEnabled() {
+    return (this.$store.state[this.paneId] as TradesPaneState).telegramEnabled
+  }
+
+  get telegramBotToken() {
+    return (this.$store.state[this.paneId] as TradesPaneState).telegramBotToken
+  }
+
+  get telegramChatId() {
+    return (this.$store.state[this.paneId] as TradesPaneState).telegramChatId
+  }
+
+  get telegramThreshold() {
+    return (this.$store.state[this.paneId] as TradesPaneState).telegramThreshold
   }
 
   get thresholdsMultipler() {

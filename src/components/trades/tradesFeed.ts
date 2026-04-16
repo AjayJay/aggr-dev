@@ -1,5 +1,6 @@
 import audioService, { AudioFunction } from '@/services/audioService'
 import gifsService from '@/services/gifsService'
+import telegramService from '@/services/telegramService'
 import { formatAmount, formatMarketPrice } from '@/services/productsService'
 import store from '@/store'
 import { SlippageMode, Trade } from '@/types/types'
@@ -97,12 +98,18 @@ export default class TradesFeed {
       }
 
       const trade = trades[i]
+      const shouldShowTrade = !trade.liquidation && this.showTrades
+      const shouldShowLiquidation = trade.liquidation && this.showLiquidations
+
+      if (shouldShowTrade || shouldShowLiquidation) {
+        telegramService.sendTradeNotification(this.paneId, trade)
+      }
 
       if (typeof this.marketsMultipliers[marketKey] !== 'undefined') {
         trade.amount /= this.marketsMultipliers[marketKey]
       }
 
-      if (!trade.liquidation && this.showTrades) {
+      if (shouldShowTrade) {
         if (
           trade.amount >= this.minimumTradeAmount &&
           trade.amount < this.maximumTradeAmount
@@ -123,7 +130,7 @@ export default class TradesFeed {
             trade.amount / this.significantTradeAmount
           )
         }
-      } else if (trade.liquidation && this.showLiquidations) {
+      } else if (shouldShowLiquidation) {
         if (
           trade.amount >= this.minimumLiquidationAmount &&
           trade.amount < this.maximumLiquidationAmount

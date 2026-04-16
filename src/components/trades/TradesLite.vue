@@ -80,6 +80,7 @@ import Slider from '@/components/framework/picker/Slider.vue'
 import PaneHeader from '@/components/panes/PaneHeader.vue'
 import dialogService from '../../services/dialogService'
 import audioService, { AudioFunction } from '../../services/audioService'
+import telegramService from '@/services/telegramService'
 import logos from '@/assets/exchanges'
 import { Trade } from '../../types/types'
 
@@ -311,6 +312,9 @@ export default class TradesLite extends Mixins(PaneMixin) {
       if (!this.filters[type] || !this.paneMarkets[marketKey]) {
         continue
       }
+
+      // Telegram runs independently of visual threshold and uses its own threshold.
+      telegramService.sendTradeNotification(this.paneId, trades[i])
 
       if (
         trades[i].amount < this.colors[type].minAmount ||

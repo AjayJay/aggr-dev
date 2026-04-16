@@ -41,6 +41,10 @@ export interface TradesPaneState {
   multipliers: { [identifier: string]: number }
   thresholdsMultipler: number
   showAvgPrice: boolean
+  telegramEnabled: boolean
+  telegramBotToken: string
+  telegramChatId: string
+  telegramThreshold: number
 }
 
 const getters = {
@@ -77,7 +81,11 @@ const state = {
   showPrices: true,
   showHistograms: true,
   thresholdsMultipler: 1,
-  showAvgPrice: true
+  showAvgPrice: true,
+  telegramEnabled: false,
+  telegramBotToken: '',
+  telegramChatId: '',
+  telegramThreshold: 100000
 } as TradesPaneState
 
 const actions = {
@@ -349,6 +357,18 @@ const mutations = {
         market
       )
     }
+  },
+  TOGGLE_TELEGRAM(state) {
+    state.telegramEnabled = !state.telegramEnabled
+  },
+  SET_TELEGRAM_BOT_TOKEN(state, value: string) {
+    state.telegramBotToken = value
+  },
+  SET_TELEGRAM_CHAT_ID(state, value: string) {
+    state.telegramChatId = value
+  },
+  SET_TELEGRAM_THRESHOLD(state, value: number) {
+    state.telegramThreshold = parseAmount(value) || 100000
   }
 } as MutationTree<TradesPaneState>
 
